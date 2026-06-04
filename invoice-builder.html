@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#cc2a2a;--red-dark:#a82020;--ink:#1c1c1c;--muted:#666;--border:#ddd;--bg:#f2f2f0;--radius:6px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;}
+
+.topbar{background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:50px;position:sticky;top:0;z-index:200;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:17px;letter-spacing:1px;font-weight:700;}
+.topbar-logo span{color:var(--red);}
+.topbar-actions{display:flex;gap:8px;}
+.tbtn{padding:7px 14px;border-radius:4px;border:none;cursor:pointer;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;transition:.15s;}
+.tbtn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.tbtn-ghost:hover{background:rgba(255,255,255,.2);}
+.tbtn-red{background:var(--red);color:#fff;}
+.tbtn-red:hover{background:var(--red-dark);}
+
+.tabs{background:#2a2a2a;display:flex;border-bottom:2px solid var(--red);}
+.tab{flex:1;padding:11px 4px;color:rgba(255,255,255,.45);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;border:none;background:none;font-family:'Barlow',sans-serif;transition:.15s;border-bottom:2px solid transparent;margin-bottom:-2px;text-align:center;}
+.tab.on{color:#fff;border-bottom-color:var(--red);}
+
+.panel{display:none;padding:14px;max-width:860px;margin:0 auto;}
+.panel.on{display:block;}
+
+.sec{background:#fff;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.sec-head{background:var(--ink);color:#fff;padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;}
+.sec-body{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sec-body.col1{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:3px;}
+.fld.full{grid-column:1/-1;}
+.fld label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);}
+.fld input,.fld textarea,.fld select{border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;color:var(--ink);background:#fff;width:100%;transition:.15s;}
+.fld input:focus,.fld textarea:focus,.fld select:focus{outline:none;border-color:var(--red);}
+.fld textarea{resize:vertical;min-height:56px;}
+
+/* logo upload */
+.logo-row{grid-column:1/-1;display:flex;align-items:center;gap:14px;}
+.logo-box{width:100px;height:100px;border:2px dashed var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0;background:#fafafa;transition:.15s;}
+.logo-box:hover{border-color:var(--red);}
+.logo-box img{width:100%;height:100%;object-fit:contain;display:none;}
+.logo-hint-txt{font-size:10px;color:var(--muted);text-align:center;line-height:1.5;}
+
+/* photo upload — editor */
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;}
+.photo-thumb{position:relative;border-radius:var(--radius);overflow:hidden;background:#f0f0f0;border:1px solid var(--border);}
+.photo-thumb img{width:100%;height:auto;display:block;}
+.photo-thumb .ph-rm{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;line-height:24px;text-align:center;cursor:pointer;padding:0;}
+.photo-add-btn{min-height:80px;border:2px dashed var(--border);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;transition:.15s;font-size:11px;color:var(--muted);gap:4px;padding:16px;}
+.photo-add-btn:hover{border-color:var(--red);color:var(--red);}
+.photo-add-icon{font-size:24px;line-height:1;}
+.photo-caption{background:#fff;}
+.photo-caption input{width:100%;border:none;border-top:1px solid var(--border);padding:6px 8px;font-size:11px;font-family:'Barlow',sans-serif;background:#fff;color:var(--ink);}
+
+/* line items */
+.li-card{background:#fafafa;border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;}
+.li-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.type-seg{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.type-seg button{padding:5px 12px;font-size:11px;font-weight:700;font-family:'Barlow',sans-serif;border:none;cursor:pointer;transition:.15s;}
+.t-lab.on{background:#1a3a6a;color:#fff;}
+.t-prt.on{background:#6a2a1a;color:#fff;}
+.type-seg button:not(.on){background:#fff;color:var(--muted);}
+.li-g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;}
+.li-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px;}
+.li-inp{border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;width:100%;background:#fff;color:var(--ink);}
+.li-inp:focus{outline:none;border-color:var(--red);}
+.li-total{text-align:right;font-size:12px;font-weight:700;color:var(--ink);margin-top:6px;}
+.rm-btn{background:none;border:none;font-size:22px;color:#ccc;cursor:pointer;line-height:1;padding:0 2px;transition:.15s;}
+.rm-btn:hover{color:var(--red);}
+.add-btn{width:100%;padding:11px;border:2px dashed var(--border);border-radius:var(--radius);background:none;font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;transition:.15s;margin-bottom:12px;}
+.add-btn:hover{border-color:var(--red);color:var(--red);}
+
+.vat-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;}
+.vat-row label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);}
+.vat-seg{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.vat-seg button{padding:6px 14px;font-size:11px;font-weight:700;font-family:'Barlow',sans-serif;border:none;cursor:pointer;transition:.15s;}
+.von.on{background:var(--red);color:#fff;}
+.voff.on{background:var(--ink);color:#fff;}
+.vat-seg button:not(.on){background:#fff;color:var(--muted);}
+
+.totals-box-outer{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+.tot-r{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f0f0f0;}
+.tot-r:last-child{border-bottom:none;}
+.tot-r .lbl{color:var(--muted);}
+.tot-grand{background:var(--ink);color:#fff;border-radius:4px;padding:10px 14px;display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-top:8px;}
+.tot-grand .lbl{color:rgba(255,255,255,.6);font-weight:400;}
+
+/* saved */
+.saved-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:.15s;margin-bottom:8px;}
+.saved-card:hover{border-color:var(--red);}
+.sc-name{font-weight:700;font-size:14px;}
+.sc-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.sc-amount{font-size:15px;font-weight:700;margin-right:12px;}
+.del-btn{background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;transition:.15s;}
+.del-btn:hover{color:var(--red);}
+.empty{text-align:center;padding:40px 0;color:var(--muted);font-size:13px;}
+
+/* ── PREVIEW ── */
+#panel-preview{padding:0;}
+.preview-wrap{background:#e8e6e2;min-height:calc(100vh - 100px);padding:20px 14px;}
+.preview-sheet{background:#fff;max-width:780px;margin:0 auto;box-shadow:0 4px 32px rgba(0,0,0,.13);border-radius:2px;}
+
+/* invoice */
+.inv{padding:36px 40px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--ink);}
+
+/* TOP: logo left, INVOICE word right */
+.inv-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;gap:20px;}
+.inv-brand-block{}
+.inv-logo-img{max-width:160px;max-height:130px;object-fit:contain;display:block;}
+.inv-logo-ph{width:120px;height:120px;background:var(--ink);border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;color:#fff;}
+.inv-biz-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;margin-top:10px;}
+.inv-biz-sub{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.7;}
+
+.inv-title-col{text-align:right;flex-shrink:0;}
+.inv-word{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:700;letter-spacing:3px;line-height:1;color:var(--ink);}
+.inv-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:3px;margin-top:6px;text-transform:uppercase;}
+.b-paid{background:#e6f4ec;color:#1a6b3a;border:1px solid #aad8bc;}
+.b-unpaid{background:#fff8e1;color:#7a5c00;border:1px solid #f0d070;}
+.b-overdue{background:#fdecea;color:#b91c1c;border:1px solid #f8b4b4;}
+.b-draft{background:#f0f0f0;color:#555;border:1px solid #ccc;}
+.inv-num{font-size:12px;color:var(--muted);margin-top:7px;}
+.inv-dates{font-size:12px;color:var(--muted);margin-top:2px;}
+.inv-agent{font-size:11px;color:#aaa;margin-top:3px;}
+
+/* Bill To + Vehicle side by side */
+.inv-info-row{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);margin-bottom:18px;}
+.inv-info-col{padding:14px 18px;}
+.inv-info-col+.inv-info-col{border-left:1px solid var(--border);}
+.info-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.pty-name{font-size:14px;font-weight:700;margin-bottom:3px;}
+.pty-line{font-size:11px;color:var(--muted);line-height:1.65;}
+
+/* vehicle fields in right col */
+.veh-grid{display:flex;flex-direction:column;gap:5px;}
+.veh-row{display:flex;gap:8px;align-items:baseline;}
+.veh-row .vk{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);width:72px;flex-shrink:0;}
+.veh-row .vv{font-size:12px;font-weight:600;color:var(--ink);}
+.veh-reg-badge{background:var(--ink);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;padding:4px 14px;border-radius:3px;display:inline-block;margin-bottom:8px;}
+
+table.inv-tbl{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13px;}
+.inv-tbl thead tr{border-bottom:2px solid var(--ink);}
+.inv-tbl th{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:7px 8px;text-align:left;}
+.inv-tbl th.r,.inv-tbl td.r{text-align:right;}
+.inv-tbl td{padding:10px 8px;border-bottom:1px solid #ececec;vertical-align:top;}
+.inv-tbl tbody tr:last-child td{border-bottom:none;}
+.it-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;margin-bottom:3px;}
+.it-lab{background:#e8f0f8;color:#1a3a6a;}
+.it-prt{background:#f5ece8;color:#6a2a1a;}
+.it-name{font-weight:600;}
+.it-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5;}
+
+.inv-totals-area{display:flex;justify-content:flex-end;margin-bottom:20px;}
+.inv-totals-box{width:260px;}
+.inv-tr{display:flex;justify-content:space-between;padding:5px 10px;font-size:13px;}
+.inv-tr .lbl{color:var(--muted);}
+.inv-tr-grand{background:var(--ink);color:#fff;border-radius:4px;margin-top:6px;padding:9px 10px;display:flex;justify-content:space-between;font-weight:700;font-size:14px;}
+.inv-tr-grand .lbl{color:rgba(255,255,255,.6);font-weight:400;}
+
+.inv-tx{margin-bottom:18px;}
+.tx-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+table.tx-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tx-tbl th{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;font-weight:700;}
+.tx-tbl td{padding:7px 8px;border-bottom:1px solid #f0f0f0;}
+
+.inv-note{border-left:3px solid #ddd;padding:7px 12px;margin-bottom:16px;font-size:12px;color:var(--muted);line-height:1.6;}
+.inv-note strong{color:var(--ink);font-size:10px;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:3px;}
+.inv-terms{border-top:1px solid var(--border);padding-top:14px;font-size:11px;color:var(--muted);line-height:1.7;}
+.inv-terms strong{display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;color:var(--ink);}
+
+/* photos on invoice — 2 per row, natural aspect ratio */
+.inv-photos-section{margin-bottom:20px;}
+.inv-photos-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--ink);}
+.inv-photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.inv-photo-item{}
+.inv-photo-item img{width:100%;height:auto;border-radius:4px;display:block;border:1px solid var(--border);}
+.inv-photo-cap{font-size:10px;color:var(--muted);margin-top:5px;text-align:center;font-style:italic;}
+
+.pgnum{text-align:center;font-size:10px;color:#ccc;padding:10px 40px 18px;border-top:1px solid #f0f0f0;margin-top:8px;}
+
+.print-bar{display:flex;gap:10px;padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);max-width:780px;margin:0 auto;}
+.pbtn{flex:1;padding:12px;border:none;border-radius:var(--radius);font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;}
+.pbtn-red{background:var(--red);color:#fff;}
+.pbtn-red:hover{background:var(--red-dark);}
+.pbtn-out{background:#fff;color:var(--ink);border:1px solid var(--border);}
+.pbtn-out:hover{border-color:var(--ink);}
+
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;pointer-events:none;opacity:0;transition:opacity .25s;}
+.toast.show{opacity:1;}
+
+.next-btn{width:100%;padding:13px;background:var(--red);color:#fff;border:none;border-radius:var(--radius);font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;}
+.next-btn:hover{background:var(--red-dark);}
+
+@media(max-width:520px){
+  .inv{padding:18px 14px;}
+  .inv-top{flex-direction:column;gap:12px;}
+  .inv-title-col{text-align:left;}
+  .inv-info-row{grid-template-columns:1fr;}
+  .inv-info-col+.inv-info-col{border-left:none;border-top:1px solid var(--border);}
+  .inv-totals-box{width:100%;}
+  .sec-body{grid-template-columns:1fr;}
+  .fld.full{grid-column:1;}
+  .li-g3{grid-template-columns:1fr 1fr;}
+  .logo-row{flex-direction:column;align-items:flex-start;}
+  .inv-photo-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media print{
+  .topbar,.tabs,.print-bar{display:none!important;}
+  .preview-wrap{padding:0;background:#fff;}
+  .preview-sheet{box-shadow:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">INVOICE<span>.</span>BUILDER</div>
+  <div class="topbar-actions">
+    <button class="tbtn tbtn-ghost" onclick="newInvoice()">+ New</button>
+    <button class="tbtn tbtn-red" onclick="saveInvoice()">Save</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="showTab('details',this)">Details</button>
+  <button class="tab" onclick="showTab('items',this)">Items</button>
+  <button class="tab" onclick="showTab('photos',this)">Photos</button>
+  <button class="tab" onclick="showTab('preview',this)">Preview</button>
+  <button class="tab" onclick="showTab('saved',this)">Saved</button>
+</div>
+
+<!-- DETAILS -->
+<div class="panel on" id="panel-details">
+
+  <div class="sec">
+    <div class="sec-head" onclick="tog(this)">Your Business <span>▾</span></div>
+    <div class="sec-body">
+      <div class="logo-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+        <!-- preview box -->
+        <div style="display:flex;align-items:flex-start;gap:14px;width:100%;">
+          <div id="logo-box" onclick="document.getElementById('logo-file').click()" style="border:2px dashed var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;transition:.15s;flex-shrink:0;" title="Tap to upload logo">
+            <div class="logo-hint-txt" id="logo-hint" style="padding:12px;font-size:10px;color:var(--muted);text-align:center;line-height:1.5;">📷<br>Tap to<br>upload logo</div>
+            <img id="logo-img" src="" alt="logo" style="display:none;width:100%;height:100%;object-fit:contain;">
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-top:4px;">
+            <span style="font-size:11px;color:var(--muted);line-height:1.6;">Tap the box to upload your logo (PNG/JPG).<br>Use the slider to resize it on the invoice.</span>
+            <button onclick="document.getElementById('logo-file').click()" style="padding:7px 14px;background:var(--ink);color:#fff;border:none;border-radius:4px;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;cursor:pointer;width:fit-content;">Upload Logo</button>
+            <button id="logo-remove-btn" onclick="removeLogo()" style="display:none;padding:7px 14px;background:#f5ece8;color:#6a2a1a;border:1px solid #e0c0b0;border-radius:4px;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;cursor:pointer;width:fit-content;">Remove Logo</button>
+          </div>
+        </div>
+        <!-- size slider — only shown after upload -->
+        <div id="logo-slider-row" style="display:none;width:100%;background:#f8f8f6;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);">Logo Size on Invoice</label>
+            <span id="logo-size-label" style="font-size:11px;font-weight:700;color:var(--ink);">160px</span>
+          </div>
+          <input type="range" id="logo-size" min="60" max="320" value="160" step="10"
+            style="width:100%;accent-color:var(--red);cursor:pointer;"
+            oninput="updateLogoSize(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;">
+            <span>Small</span><span>Large</span>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(event)">
+      <div class="fld full"><label>Business Name</label><input id="biz-name" value="Best Garage Ltd"></div>
+      <div class="fld full"><label>Address</label><input id="biz-addr" value="8 Bramber Rd, London, W14 9PB"></div>
+      <div class="fld"><label>Phone</label><input id="biz-phone" value="+44 20 7381 2662"></div>
+      <div class="fld"><label>Email</label><input id="biz-email" value="info@garageinvoice.co.uk"></div>
+      <div class="fld"><label>Company Number</label><input id="biz-vat" value="GB12345678"></div>
+      <div class="fld"><label>Website</label><input id="biz-web" value="www.garageinvoice.co.uk"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head" onclick="tog(this)">Invoice Info <span>▾</span></div>
+    <div class="sec-body">
+      <div class="fld"><label>Invoice #</label><input id="inv-num" value="INV-2026/001731"></div>
+      <div class="fld"><label>Status</label>
+        <select id="inv-status">
+          <option value="PAID" selected>PAID</option>
+          <option value="UNPAID">UNPAID</option>
+          <option value="OVERDUE">OVERDUE</option>
+          <option value="DRAFT">DRAFT</option>
+        </select>
+      </div>
+      <div class="fld"><label>Invoice Date</label><input type="date" id="inv-date"></div>
+      <div class="fld"><label>Due Date</label><input type="date" id="inv-due"></div>
+      <div class="fld"><label>Payment Method</label><input id="inv-pay" value="Credit/Debit Card"></div>
+      <div class="fld"><label>Sale Agent</label><input id="inv-agent" value="Garage Invoice"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head" onclick="tog(this)">Customer <span>▾</span></div>
+    <div class="sec-body col1">
+      <div class="fld"><label>Name</label><input id="cust-name" value="Ethan Lloyd"></div>
+      <div class="fld"><label>Address</label><textarea id="cust-addr">186 Devonshire Road, Pontcanna
+Cardiff
+CF24 4GC</textarea></div>
+      <div class="fld"><label>Phone</label><input id="cust-phone" value="07312 733899"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head" onclick="tog(this)">Vehicle <span>▾</span></div>
+    <div class="sec-body">
+      <div class="fld"><label>Registration</label><input id="veh-reg" value="DEM0313" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;"></div>
+      <div class="fld"><label>Make &amp; Model</label><input id="veh-make" value="2014 MG - MG3"></div>
+      <div class="fld full"><label>VIN</label><input id="veh-vin" value="DMO77C8F268F3AD42" style="font-size:12px;letter-spacing:.4px;"></div>
+      <div class="fld"><label>MOT Due</label><input type="date" id="veh-mot"></div>
+      <div class="fld"><label>Service Due</label><input type="date" id="veh-svc"></div>
+      <div class="fld"><label>Colour</label><input id="veh-colour" placeholder="e.g. Metallic Blue"></div>
+      <div class="fld"><label>Mileage</label><input id="veh-mil" placeholder="e.g. 68,500 mi"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head" onclick="tog(this)">Notes &amp; Terms <span>▾</span></div>
+    <div class="sec-body col1">
+      <div class="fld"><label>Note (shown on invoice)</label>
+        <textarea id="inv-note">Auxiliary belt condition should be monitored and replaced if noise or cracking worsens.</textarea></div>
+      <div class="fld"><label>Terms &amp; Conditions</label>
+        <textarea id="inv-terms" rows="5">All goods remain the property of the garage until paid for in full. Payment is due upon completion of the work unless otherwise agreed in writing. Any estimate provided is a guide only and additional work may be charged if further faults are found, with customer approval where possible. We are not responsible for loss or damage caused by events beyond our control. Warranty on parts and labour is limited to the manufacturer's warranty and the garage's stated warranty terms.</textarea></div>
+    </div>
+  </div>
+
+  <button class="next-btn" onclick="showTab('items',document.querySelectorAll('.tab')[1])">Next: Add Line Items →</button>
+</div>
+
+<!-- ITEMS -->
+<div class="panel" id="panel-items">
+  <div id="items-list"></div>
+  <button class="add-btn" onclick="addItem()">+ Add Part or Labour</button>
+
+  <div class="vat-row">
+    <label>VAT</label>
+    <div class="vat-seg">
+      <button class="von on" id="vat-on" onclick="setVat(true)">Yes 20%</button>
+      <button class="voff" id="vat-off" onclick="setVat(false)">No VAT</button>
+    </div>
+  </div>
+
+  <div class="totals-box-outer">
+    <div class="tot-r"><span class="lbl">Subtotal</span><span id="t-sub">£0.00</span></div>
+    <div class="tot-r" id="t-vat-row"><span class="lbl">VAT (20%)</span><span id="t-vat">£0.00</span></div>
+    <div class="tot-grand"><span class="lbl">Total</span><span id="t-total">£0.00</span></div>
+  </div>
+
+  <button class="next-btn" style="margin-top:12px;" onclick="showTab('photos',document.querySelectorAll('.tab')[2])">Next: Add Photos →</button>
+</div>
+
+<!-- PHOTOS -->
+<div class="panel" id="panel-photos">
+  <div class="sec">
+    <div class="sec-head">Job Photos <span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:10px;opacity:.7;">— appear on the invoice</span></div>
+    <div class="photo-grid" id="photo-grid">
+      <div class="photo-add-btn" onclick="document.getElementById('photo-file').click()">
+        <div class="photo-add-icon">📷</div>
+        <div>Add Photo</div>
+      </div>
+    </div>
+    <input type="file" id="photo-file" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)">
+    <div style="padding:0 14px 14px;font-size:11px;color:var(--muted);">Tap a photo to add a caption. Photos print on the invoice below the line items.</div>
+  </div>
+  <button class="next-btn" onclick="showTab('preview',document.querySelectorAll('.tab')[3])">Preview Invoice →</button>
+</div>
+
+<!-- PREVIEW -->
+<div class="panel" id="panel-preview">
+  <div class="preview-wrap">
+    <div class="preview-sheet">
+      <div class="inv" id="inv-render"></div>
+      <div class="pgnum">1 / 1</div>
+    </div>
+  </div>
+  <div class="print-bar">
+    <button class="pbtn pbtn-red" onclick="window.print()">🖨 Print / Save PDF</button>
+    <button class="pbtn pbtn-out" onclick="copyText()">📋 Copy Summary</button>
+  </div>
+</div>
+
+<!-- SAVED -->
+<div class="panel" id="panel-saved">
+  <div id="saved-list"></div>
+  <button class="add-btn" onclick="newInvoice()">+ Create New Invoice</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let logoData=null, logoSize=160, vatOn=true, currentId=null;
+let photos=[]; // [{data, caption}]
+let items=[
+  {t:'labour',name:'Labour - alternator replacement',desc:'Remove and replace alternator, test charging system and clear any stored codes.',qty:'2.4',unit:'hrs',price:'88.00'},
+  {t:'part',  name:'Alternator assembly',            desc:'OE-quality alternator supplied and fitted.',qty:'1',unit:'ea',price:'256.08'},
+  {t:'part',  name:'Start-stop battery',             desc:'AGM battery supplied and coded where required.',qty:'1',unit:'ea',price:'179.52'}
+];
+
+const g=id=>document.getElementById(id)?.value||'';
+const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+const fmt=n=>'£'+parseFloat(n||0).toFixed(2);
+const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;};
+
+function showTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+  if(name==='items'){renderItems();updateTotals();}
+  if(name==='preview'){renderPreview();}
+  if(name==='saved'){renderSaved();}
+}
+
+function tog(head){
+  const body=head.nextElementSibling;
+  const arrow=head.querySelector('span');
+  const hidden=body.style.display==='none';
+  body.style.display=hidden?'':'none';
+  arrow.textContent=hidden?'▾':'▸';
+}
+
+function updateLogoSize(val){
+  logoSize=parseInt(val);
+  document.getElementById('logo-size-label').textContent=val+'px';
+  // update the preview box size
+  const box=document.getElementById('logo-box');
+  box.style.width=val+'px';
+  box.style.height=val+'px';
+}
+
+function removeLogo(){
+  logoData=null;
+  const img=document.getElementById('logo-img');
+  img.src='';img.style.display='none';
+  document.getElementById('logo-hint').style.display='';
+  document.getElementById('logo-slider-row').style.display='none';
+  document.getElementById('logo-remove-btn').style.display='none';
+  const box=document.getElementById('logo-box');
+  box.style.width='100px';box.style.height='100px';
+}
+
+function handleLogo(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    logoData=ev.target.result;
+    const img=document.getElementById('logo-img');
+    img.src=logoData;img.style.display='block';
+    document.getElementById('logo-hint').style.display='none';
+    // show slider and remove button
+    document.getElementById('logo-slider-row').style.display='block';
+    document.getElementById('logo-remove-btn').style.display='inline-block';
+    // size the preview box to current logoSize
+    const box=document.getElementById('logo-box');
+    box.style.width=logoSize+'px';box.style.height=logoSize+'px';
+  };
+  r.readAsDataURL(f);
+}
+
+function handlePhotos(e){
+  const files=Array.from(e.target.files);
+  let loaded=0;
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{
+      // measure natural dimensions before storing
+      const img=new Image();
+      img.onload=()=>{
+        photos.push({data:ev.target.result,caption:'',w:img.naturalWidth,h:img.naturalHeight});
+        loaded++;
+        if(loaded===files.length) renderPhotoGrid();
+      };
+      img.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+
+function renderPhotoGrid(){
+  const grid=document.getElementById('photo-grid');
+  grid.innerHTML='';
+  photos.forEach((ph,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='photo-thumb';
+    wrap.innerHTML=`<img src="${ph.data}" alt="photo ${i+1}">
+      <button class="ph-rm" onclick="removePhoto(${i})">×</button>
+      <div class="photo-caption"><input type="text" placeholder="Caption…" value="${ph.caption.replace(/"/g,'&quot;')}" oninput="photos[${i}].caption=this.value" style="border:none;border-top:1px solid #ddd;padding:5px 8px;font-size:11px;width:100%;background:#fff;"></div>`;
+    grid.appendChild(wrap);
+  });
+  // add button
+  const addBtn=document.createElement('div');
+  addBtn.className='photo-add-btn';
+  addBtn.innerHTML='<div class="photo-add-icon">📷</div><div>Add Photo</div>';
+  addBtn.onclick=()=>document.getElementById('photo-file').click();
+  grid.appendChild(addBtn);
+}
+
+function removePhoto(i){
+  photos.splice(i,1);
+  renderPhotoGrid();
+}
+
+function setVat(v){
+  vatOn=v;
+  document.getElementById('vat-on').classList.toggle('on',v);
+  document.getElementById('vat-off').classList.toggle('on',!v);
+  document.getElementById('t-vat-row').style.display=v?'':'none';
+  updateTotals();
+}
+
+function updateTotals(){
+  const sub=items.reduce((s,it)=>s+parseFloat(it.qty||0)*parseFloat(it.price||0),0);
+  const vat=vatOn?sub*.2:0;
+  document.getElementById('t-sub').textContent=fmt(sub);
+  document.getElementById('t-vat').textContent=fmt(vat);
+  document.getElementById('t-total').textContent=fmt(sub+vat);
+}
+
+function renderItems(){
+  const c=document.getElementById('items-list');c.innerHTML='';
+  items.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='li-card';
+    d.innerHTML=`
+      <div class="li-top">
+        <div class="type-seg">
+          <button class="t-lab ${it.t==='labour'?'on':''}" onclick="setType(${i},'labour')">Labour</button>
+          <button class="t-prt ${it.t==='part'?'on':''}" onclick="setType(${i},'part')">Part</button>
+        </div>
+        <button class="rm-btn" onclick="removeItem(${i})">×</button>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label class="li-label">Item Name</label>
+        <input class="li-inp" value="${esc(it.name)}" oninput="items[${i}].name=this.value;updateTotals();litot(${i})">
+      </div>
+      <div style="margin-bottom:8px;">
+        <label class="li-label">Description</label>
+        <input class="li-inp" value="${esc(it.desc||'')}" oninput="items[${i}].desc=this.value">
+      </div>
+      <div class="li-g3">
+        <div><label class="li-label">Qty</label>
+          <input class="li-inp" type="number" step="0.1" value="${it.qty}" oninput="items[${i}].qty=this.value;updateTotals();litot(${i})"></div>
+        <div><label class="li-label">Unit</label>
+          <select class="li-inp" onchange="items[${i}].unit=this.value">
+            <option ${it.unit==='hrs'?'selected':''}>hrs</option>
+            <option ${it.unit==='ea'?'selected':''}>ea</option>
+            <option ${it.unit==='set'?'selected':''}>set</option>
+            <option ${it.unit==='ltr'?'selected':''}>ltr</option>
+          </select></div>
+        <div><label class="li-label">Price £</label>
+          <input class="li-inp" type="number" step="0.01" value="${it.price}" oninput="items[${i}].price=this.value;updateTotals();litot(${i})"></div>
+      </div>
+      <div class="li-total" id="lit-${i}"></div>`;
+    c.appendChild(d);litot(i);
+  });
+}
+
+function litot(i){
+  const el=document.getElementById('lit-'+i);if(!el)return;
+  const sub=parseFloat(items[i].qty||0)*parseFloat(items[i].price||0);
+  const vat=vatOn?sub*.2:0;
+  el.textContent=`Line: ${fmt(sub)}${vatOn?' → '+fmt(sub+vat)+' inc VAT':''}`;
+}
+
+function setType(i,t){items[i].t=t;renderItems();updateTotals();}
+function removeItem(i){items.splice(i,1);renderItems();updateTotals();}
+function addItem(){
+  items.push({t:'labour',name:'',desc:'',qty:'1',unit:'hrs',price:'0.00'});
+  renderItems();
+  document.getElementById('items-list').lastElementChild?.scrollIntoView({behavior:'smooth'});
+}
+
+function renderPreview(){
+  const sub=items.reduce((s,it)=>s+parseFloat(it.qty||0)*parseFloat(it.price||0),0);
+  const vat=vatOn?sub*.2:0;
+  const total=sub+vat;
+  const paid=g('inv-status')==='PAID';
+  const bmap={PAID:'b-paid',UNPAID:'b-unpaid',OVERDUE:'b-overdue',DRAFT:'b-draft'};
+  const bc=bmap[g('inv-status')]||'b-draft';
+
+  const logoHtml=logoData
+    ?`<img class="inv-logo-img" src="${logoData}" alt="logo" style="max-width:${logoSize}px;max-height:${Math.round(logoSize*0.85)}px;">`
+    :`<div class="inv-logo-ph" style="width:${Math.min(logoSize,120)}px;height:${Math.min(logoSize,120)}px;font-size:${Math.round(Math.min(logoSize,120)*0.33)}px;">${(g('biz-name')||'B').charAt(0).toUpperCase()}</div>`;
+
+  const rows=items.map((it,i)=>{
+    const lt=parseFloat(it.qty||0)*parseFloat(it.price||0);
+    const badge=it.t==='labour'?`<span class="it-badge it-lab">Labour</span>`:`<span class="it-badge it-prt">Part</span>`;
+    return`<tr>
+      <td style="color:#bbb;font-size:12px;width:24px;">${i+1}</td>
+      <td>${badge}<div class="it-name">${esc(it.name)}</div>${it.desc?`<div class="it-desc">${esc(it.desc)}</div>`:''}</td>
+      <td class="r" style="white-space:nowrap;">${it.qty} ${it.unit}</td>
+      <td class="r" style="white-space:nowrap;">${fmt(it.price)}</td>
+      <td class="r" style="white-space:nowrap;font-weight:600;">${fmt(lt)}</td>
+    </tr>`;
+  }).join('');
+
+  const vatLine=vatOn?`<div class="inv-tr"><span class="lbl">VAT (20.00%)</span><span>${fmt(vat)}</span></div>`:'';
+
+  // vehicle fields
+  const vr=g('veh-reg').toUpperCase();
+  const vm=g('veh-make'),vv=g('veh-vin'),vmot=g('veh-mot'),vsvc=g('veh-svc'),vmil=g('veh-mil'),vcol=g('veh-colour');
+  const vehRows=[
+    vr?`<div class="veh-reg-badge">${vr}</div>`:'',
+    vm?`<div class="veh-row"><span class="vk">Vehicle</span><span class="vv">${esc(vm)}</span></div>`:'',
+    vv?`<div class="veh-row"><span class="vk">VIN</span><span class="vv" style="font-size:11px;">${esc(vv)}</span></div>`:'',
+    vcol?`<div class="veh-row"><span class="vk">Colour</span><span class="vv">${esc(vcol)}</span></div>`:'',
+    vmil?`<div class="veh-row"><span class="vk">Mileage</span><span class="vv">${esc(vmil)}</span></div>`:'',
+    vmot?`<div class="veh-row"><span class="vk">MOT Due</span><span class="vv">${fmtD(vmot)}</span></div>`:'',
+    vsvc?`<div class="veh-row"><span class="vk">Svc Due</span><span class="vv">${fmtD(vsvc)}</span></div>`:'',
+  ].filter(Boolean).join('');
+
+  // photos — all same height as first image, width auto (preserves each image's aspect ratio)
+  let photosHtml='';
+  if(photos.length>0){
+    // derive a display height from the first image's natural ratio
+    // target ~220px display height for the first image; scale others to match
+    const refH=photos[0].h||1;
+    const refW=photos[0].w||1;
+    // we'll use object-fit with an explicit height so all images share the same row height
+    // use the first image's natural height as the shared fixed height (capped for layout)
+    const displayH=Math.round(Math.min(Math.max((refH/refW)*280,120),320));
+    const photoItems=photos.map(ph=>`
+      <div class="inv-photo-item">
+        <img src="${ph.data}" alt="job photo" style="height:${displayH}px;width:auto;max-width:100%;">
+        ${ph.caption?`<div class="inv-photo-cap">${esc(ph.caption)}</div>`:''}
+      </div>`).join('');
+    photosHtml=`<div class="inv-photos-section">
+      <div class="inv-photos-lbl">Job Photos</div>
+      <div class="inv-photo-grid" style="grid-template-columns:1fr 1fr;align-items:start;">${photoItems}</div>
+    </div>`;
+  }
+
+  document.getElementById('inv-render').innerHTML=`
+    <div class="inv-top">
+      <div class="inv-brand-block">
+        ${logoHtml}
+        <div class="inv-biz-name">${esc(g('biz-name'))}</div>
+        <div class="inv-biz-sub">
+          ${esc(g('biz-addr'))}<br>
+          ${g('biz-phone')?'Tel: '+esc(g('biz-phone'))+'<br>':''}
+          ${g('biz-vat')?'Co. No: '+esc(g('biz-vat'))+'<br>':''}
+          ${g('biz-email')?esc(g('biz-email'))+'<br>':''}
+          ${g('biz-web')?esc(g('biz-web')):''}
+        </div>
+      </div>
+      <div class="inv-title-col">
+        <div class="inv-word">INVOICE</div>
+        <div><span class="inv-badge ${bc}">${g('inv-status')||'DRAFT'}</span></div>
+        <div class="inv-num"># ${esc(g('inv-num'))}</div>
+        <div class="inv-dates">Invoice Date: ${fmtD(g('inv-date'))}</div>
+        <div class="inv-dates">Due Date: ${fmtD(g('inv-due'))}</div>
+        ${g('inv-agent')?`<div class="inv-agent">Sale Agent: ${esc(g('inv-agent'))}</div>`:''}
+      </div>
+    </div>
+
+    <div class="inv-info-row">
+      <div class="inv-info-col">
+        <div class="info-lbl">Bill To</div>
+        <div class="pty-name">${esc(g('cust-name'))}</div>
+        <div class="pty-line">${esc(g('cust-addr'))}</div>
+        ${g('cust-phone')?`<div class="pty-line">Tel: ${esc(g('cust-phone'))}</div>`:''}
+      </div>
+      <div class="inv-info-col">
+        <div class="info-lbl">Vehicle</div>
+        <div class="veh-grid">${vehRows||'<span style="color:#ccc;font-size:12px;">No vehicle info</span>'}</div>
+      </div>
+    </div>
+
+    <table class="inv-tbl">
+      <thead><tr>
+        <th>#</th><th>Item Name</th>
+        <th class="r">Qty</th><th class="r">Price</th><th class="r">Amount</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div class="inv-totals-area">
+      <div class="inv-totals-box">
+        <div class="inv-tr"><span class="lbl">Sub Total</span><span>${fmt(sub)}</span></div>
+        ${vatLine}
+        <div class="inv-tr-grand"><span class="lbl">Total</span><span>${fmt(total)}</span></div>
+        <div class="inv-tr" style="margin-top:4px;"><span class="lbl">Total Paid</span><span style="color:${paid?'#1a6b3a':'var(--muted)'};">${paid?'-'+fmt(total):'—'}</span></div>
+        <div class="inv-tr" style="font-weight:700;"><span class="lbl">Amount Due</span><span>${paid?'£0.00':fmt(total)}</span></div>
+      </div>
+    </div>
+
+    ${g('inv-pay')?`<div class="inv-tx">
+      <div class="tx-lbl">Transactions</div>
+      <table class="tx-tbl">
+        <thead><tr><th>Payment #</th><th>Mode</th><th>Date</th><th>Amount</th></tr></thead>
+        <tbody><tr>
+          <td>${esc(g('inv-num'))}</td><td>${esc(g('inv-pay'))}</td>
+          <td>${fmtD(g('inv-date'))}</td>
+          <td style="font-weight:600;">${paid?fmt(total):'—'}</td>
+        </tr></tbody>
+      </table>
+    </div>`:''}
+
+    ${photosHtml}
+
+    ${g('inv-note')?`<div class="inv-note"><strong>Note</strong>${esc(g('inv-note'))}</div>`:''}
+    ${g('inv-terms')?`<div class="inv-terms"><strong>Terms &amp; Conditions</strong>${esc(g('inv-terms'))}</div>`:''}
+  `;
+}
+
+function getState(){
+  return{id:currentId||Date.now().toString(),ts:Date.now(),logo:logoData,logoSize:logoSize,vat:vatOn,
+    photos:photos.map(p=>({data:p.data,caption:p.caption})),
+    items:JSON.parse(JSON.stringify(items)),
+    f:{bizName:g('biz-name'),bizAddr:g('biz-addr'),bizPhone:g('biz-phone'),bizEmail:g('biz-email'),
+       bizVat:g('biz-vat'),bizWeb:g('biz-web'),
+       invNum:g('inv-num'),invDate:g('inv-date'),invDue:g('inv-due'),
+       invStatus:g('inv-status'),invPay:g('inv-pay'),invAgent:g('inv-agent'),
+       custName:g('cust-name'),custAddr:g('cust-addr'),custPhone:g('cust-phone'),
+       vehReg:g('veh-reg'),vehMake:g('veh-make'),vehVin:g('veh-vin'),
+       vehMot:g('veh-mot'),vehSvc:g('veh-svc'),vehMil:g('veh-mil'),vehColour:g('veh-colour'),
+       invNote:g('inv-note'),invTerms:g('inv-terms')}};
+}
+
+function setState(d){
+  currentId=d.id;logoData=d.logo||null;logoSize=d.logoSize||160;vatOn=d.vat!==false;
+  items=d.items||[];photos=d.photos||[];
+  const f=d.f||{};
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  sv('biz-name',f.bizName);sv('biz-addr',f.bizAddr);sv('biz-phone',f.bizPhone);
+  sv('biz-email',f.bizEmail);sv('biz-vat',f.bizVat);sv('biz-web',f.bizWeb);
+  sv('inv-num',f.invNum);sv('inv-date',f.invDate);sv('inv-due',f.invDue);
+  sv('inv-status',f.invStatus);sv('inv-pay',f.invPay);sv('inv-agent',f.invAgent);
+  sv('cust-name',f.custName);sv('cust-addr',f.custAddr);sv('cust-phone',f.custPhone);
+  sv('veh-reg',f.vehReg);sv('veh-make',f.vehMake);sv('veh-vin',f.vehVin);
+  sv('veh-mot',f.vehMot);sv('veh-svc',f.vehSvc);sv('veh-mil',f.vehMil);sv('veh-colour',f.vehColour);
+  sv('inv-note',f.invNote);sv('inv-terms',f.invTerms);
+  // restore slider
+  const slider=document.getElementById('logo-size');
+  slider.value=logoSize;
+  document.getElementById('logo-size-label').textContent=logoSize+'px';
+  const box=document.getElementById('logo-box');
+  const img=document.getElementById('logo-img');
+  if(logoData){
+    img.src=logoData;img.style.display='block';
+    document.getElementById('logo-hint').style.display='none';
+    document.getElementById('logo-slider-row').style.display='block';
+    document.getElementById('logo-remove-btn').style.display='inline-block';
+    box.style.width=logoSize+'px';box.style.height=logoSize+'px';
+  } else {
+    img.style.display='none';
+    document.getElementById('logo-hint').style.display='';
+    document.getElementById('logo-slider-row').style.display='none';
+    document.getElementById('logo-remove-btn').style.display='none';
+    box.style.width='100px';box.style.height='100px';
+  }
+  document.getElementById('vat-on').classList.toggle('on',vatOn);
+  document.getElementById('vat-off').classList.toggle('on',!vatOn);
+  document.getElementById('t-vat-row').style.display=vatOn?'':'none';
+  renderPhotoGrid();
+}
+
+function saveInvoice(){
+  const d=getState();currentId=d.id;
+  let all=JSON.parse(localStorage.getItem('inv_store')||'[]');
+  const i=all.findIndex(x=>x.id===d.id);
+  if(i>=0)all[i]=d;else all.unshift(d);
+  try{localStorage.setItem('inv_store',JSON.stringify(all));toast('Saved ✓');}
+  catch(e){toast('Too large to save — reduce photos');}
+}
+
+function renderSaved(){
+  const all=JSON.parse(localStorage.getItem('inv_store')||'[]');
+  const c=document.getElementById('saved-list');
+  if(!all.length){c.innerHTML='<div class="empty">No saved invoices yet.</div>';return;}
+  c.innerHTML=all.map(d=>{
+    const f=d.f||{};
+    const sub=(d.items||[]).reduce((s,it)=>s+parseFloat(it.qty||0)*parseFloat(it.price||0),0);
+    const tot=d.vat!==false?sub*1.2:sub;
+    const sc={PAID:'#1a6b3a',UNPAID:'#7a5c00',OVERDUE:'#b91c1c',DRAFT:'#555'}[f.invStatus]||'#555';
+    return`<div class="saved-card" onclick="loadSaved('${d.id}')">
+      <div>
+        <div class="sc-name">${esc(f.custName)||'Unknown'} — ${esc(f.invNum)||'No #'}</div>
+        <div class="sc-meta">${esc(f.vehMake)||''} · ${fmtD(f.invDate)||'No date'} · <span style="color:${sc};font-weight:700;">${f.invStatus||'DRAFT'}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="sc-amount">${fmt(tot)}</span>
+        <button class="del-btn" onclick="event.stopPropagation();delSaved('${d.id}')">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadSaved(id){
+  const all=JSON.parse(localStorage.getItem('inv_store')||'[]');
+  const d=all.find(x=>x.id===id);if(!d)return;
+  setState(d);showTab('details',document.querySelectorAll('.tab')[0]);toast('Loaded');
+}
+
+function delSaved(id){
+  if(!confirm('Delete this invoice?'))return;
+  let all=JSON.parse(localStorage.getItem('inv_store')||'[]');
+  all=all.filter(x=>x.id!==id);
+  localStorage.setItem('inv_store',JSON.stringify(all));renderSaved();
+}
+
+function newInvoice(){
+  currentId=null;logoData=null;logoSize=160;photos=[];
+  items=[{t:'labour',name:'',desc:'',qty:'1',unit:'hrs',price:'0.00'}];
+  setState({items,photos:[],vat:true,f:{}});
+  showTab('details',document.querySelectorAll('.tab')[0]);
+}
+
+function copyText(){
+  const sub=items.reduce((s,it)=>s+parseFloat(it.qty||0)*parseFloat(it.price||0),0);
+  const total=vatOn?sub*1.2:sub;
+  let t=`INVOICE ${g('inv-num')}\n${g('biz-name')} → ${g('cust-name')}\nVehicle: ${g('veh-make')} ${g('veh-reg').toUpperCase()}\n\n`;
+  items.forEach(it=>{t+=`- ${it.name}: ${it.qty} ${it.unit} × £${parseFloat(it.price).toFixed(2)} = £${(parseFloat(it.qty)*parseFloat(it.price)).toFixed(2)}\n`;});
+  t+=`\nTotal: £${total.toFixed(2)}${vatOn?' (inc. VAT)':''}`;
+  navigator.clipboard?.writeText(t).then(()=>toast('Copied ✓'));
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+// init
+const today=new Date().toISOString().split('T')[0];
+document.getElementById('inv-date').value=today;
+const dd=new Date();dd.setDate(dd.getDate()+28);
+document.getElementById('inv-due').value=dd.toISOString().split('T')[0];
+document.getElementById('veh-mot').value='2026-09-29';
+document.getElementById('veh-svc').value='2026-07-20';
+</script>
+</body>
+</html>
